@@ -1,3 +1,21 @@
 # BilibiliDownloader
 
-This script used to work properly but now need to be fixed.
+## requirements
+
+axios
+
+ffmpeg
+
+## usage
+
+set following constant variant at the top of bilibiliDownloader.js
+
+bvid
+
+downloadADD
+
+start
+
+end
+
+cookie
