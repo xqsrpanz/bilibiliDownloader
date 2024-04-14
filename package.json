@@ -8,8 +8,8 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node bilibiliDownloader.js",
-    "log": "node bilibiliDownloader.js > log.txt"
+    "start": "node index.js",
+    "log": "node index.js > log.txt"
   },
   "keywords": [],
   "author": "",

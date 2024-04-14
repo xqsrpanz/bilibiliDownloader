@@ -1,10 +1,3 @@
-// 手动配置常量，start从1开始，表示P1，end如果为undefined表示下载到最后一个分P为止
-const bvid = "BV1HV4y1a7n4";
-const downloadADD = "D:\\vue2+vue3全套";
-const start = 67;
-const end = 67;
-const cookie = `buvid3=BCB94AE8-4069-235B-5809-CE543B437A3905969infoc; b_nut=1710061805; CURRENT_FNVAL=4048; _uuid=C6A6FB21-D1028-DA1C-8254-16A9ADE28B6486402infoc; buvid4=C7153E06-AC24-086C-7B24-69FCBAB0D2F906866-024031009-h5Ft%2Fs0PjKMrCt1aoYpdYA%3D%3D; rpdid=|(RlRkl~))R0J'u~u||Yu)|m; DedeUserID=405529290; DedeUserID__ckMd5=0200e9a8fdb220a8; CURRENT_QUALITY=80; enable_web_push=DISABLE; FEED_LIVE_VERSION=V8; header_theme_version=CLOSE; home_feed_column=5; PVID=1; buvid_fp_plain=undefined; hit-dyn-v2=1; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI3NjIwNTQsImlhdCI6MTcxMjUwMjc5NCwicGx0IjotMX0.BaYd8F-93n7JF1uDAT2Pwbogrbhx35cuv9Z0n7wHTOo; bili_ticket_expires=1712761994; SESSDATA=ae279ae2%2C1728139803%2Cc0995%2A42CjC2lnH0Z3wBkQs3pRZFayNdTdCxNTRsR8wnGWL2bHMkajxpBa_UxU-jHj8fwMBGQxESVlRQZG9OMFN6YkhkbjQ4MnU3R25FX0hGQndGQmh2RDJsd0dYNUhtb2Y0VEpxb2FTRkozUlNjLXozM0pLNVdYWGJ2UDBzbnUxeV9xNFhuaDFpbXlmUER3IIEC; bili_jct=f50e6754a000b2f0dc73a6fa9f27bcc2; fingerprint=94bbf71890666cb0573375bb79c54bf7; buvid_fp=94bbf71890666cb0573375bb79c54bf7; bp_video_offset_405529290=918376776564998161; b_lsid=52FA2857_18EC312AAD2; bmg_af_switch=1; bmg_src_def_domain=i1.hdslb.com; browser_resolution=1707-150`;
-
 // 引用包
 const axios = require('axios');
 const fs = require('fs');
@@ -43,7 +36,7 @@ const headersPage = {
 };
 
 // 下载单个分P视频
-async function downloadPage(name, url){
+async function downloadPage(name, url, downloadADD, cookie, partial){
   const result = await axios({
     url,
     headers: {
@@ -56,14 +49,27 @@ async function downloadPage(name, url){
   const videoPath = path.join(downloadADD, `${name}_video`);
   const audioPath = path.join(downloadADD, `${name}_audio`);
   const outputPath = path.join(downloadADD, `${name}.mp4`);
-
   const videoSrc = playinfo.data.dash.video[0];
   const videoUrl = [videoSrc.baseUrl, ...videoSrc.backupUrl];
+  const audioSrc = playinfo.data.dash.audio[0];
+  const audioUrl = [audioSrc.baseUrl, ...audioSrc.backupUrl];
+  // video only
+  if(partial === 0){
+    const vd = await download(path.join(downloadADD, `${name}.mp4`), videoUrl, url);
+    console.log(vd);
+    return;
+  }
+  // audio only
+  if(partial === 1){
+    const ad = await download(path.join(downloadADD, `${name}.mp3`), audioUrl, url);
+    console.log(ad);
+    return;
+  }
+
+  // default
   const vd = await download(videoPath, videoUrl, url);
   console.log(vd);
 
-  const audioSrc = playinfo.data.dash.audio[0];
-  const audioUrl = [audioSrc.baseUrl, ...audioSrc.backupUrl];
   const ad = await download(audioPath, audioUrl, url);
   console.log(ad);
 
@@ -153,7 +159,7 @@ async function download(path, urls, referer) {
 }
 
 // 获取分P视频名称列表
-async function getList() {
+async function getList(bvid) {
   const url = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`;
   const result = await axios({
     url,
@@ -170,21 +176,22 @@ async function getList() {
 }
 
 // 主函数
-async function main() {
-  const li = await getList()
+async function bilibiliDownloader(config) {
+  const {bvid, downloadADD, start = 1, end = undefined, cookie = '', partial = undefined} = config;
+  const li = await getList(bvid)
   const BaseURL = `https://www.bilibili.com/video/${bvid}`;
   if (li.length == 1){
-    await downloadPage(li[0], BaseURL);
+    await downloadPage(li[0], BaseURL, downloadADD, cookie, partial);
     return;
   }
   let cnt = 0;
   for (let i = start-1; i < (end || li.length); i++) {
     const url = `${BaseURL}?p=${i+1}`;
     cnt++;
-    await downloadPage(li[i], url);
+    await downloadPage(li[i], url, downloadADD, cookie, partial);
   }
   console.log(`全部视频下载完成，共下载${cnt}个`);
   return;
 }
 
-main();
+module.exports = bilibiliDownloader;
